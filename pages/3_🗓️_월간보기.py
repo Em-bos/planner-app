@@ -76,7 +76,7 @@ routine = get_routine()
 month_data_items = set()
 for (d_str, item), val in range_data.items():
     d_obj = date.fromisoformat(d_str)
-    if first_day <= d_obj <= last_day:
+    if first_day <= d_obj <= last_day:  
         month_data_items.add(item)
 
 extra_items = [it for it in month_data_items if it not in routine]
@@ -84,6 +84,66 @@ all_items = routine + extra_items
 
 # --- 1) 달력 모양 ---
 st.subheader("📆 달력")
+
+# 모바일/태블릿에 따라 폰트와 패딩 자동 조절하는 CSS
+st.markdown("""
+<style>
+.cal-cell {
+    border-radius: 6px;
+    padding: 6px;
+    min-height: 75px;
+    font-size: 12px;
+    line-height: 1.3;
+}
+.cal-day-num {
+    font-weight: bold;
+    font-size: 14px;
+}
+.cal-header {
+    text-align: center;
+    font-weight: bold;
+    padding: 4px 0;
+}
+/* 모바일: 화면 폭 600px 이하 */
+@media (max-width: 600px) {
+    .cal-cell {
+        padding: 3px;
+        min-height: 55px;
+        font-size: 9px;
+        line-height: 1.15;
+    }
+    .cal-day-num {
+        font-size: 11px;
+    }
+    .cal-header {
+        font-size: 11px;
+        padding: 2px 0;
+    }
+    /* Streamlit 컬럼 간격 좁히기 */
+    div[data-testid="stHorizontalBlock"] {
+        gap: 2px !important;
+    }
+    div[data-testid="column"] {
+        padding: 0 !important;
+        min-width: 0 !important;
+    }
+}
+/* 아주 좁은 화면: 폴드 접힌 상태 등 */
+@media (max-width: 400px) {
+    .cal-cell {
+        padding: 2px;
+        min-height: 50px;
+        font-size: 8px;
+    }
+    .cal-day-num {
+        font-size: 10px;
+    }
+    .cal-header {
+        font-size: 10px;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
 
 weekday_kr = ["월", "화", "수", "목", "금", "토", "일"]
 
@@ -93,7 +153,7 @@ for i, wk in enumerate(weekday_kr):
     with header_cols[i]:
         color = "#ff4d4d" if i == 6 else ("#4d8bff" if i == 5 else "inherit")
         st.markdown(
-            f"<div style='text-align:center; font-weight:bold; color:{color};'>{wk}</div>",
+            f"<div class='cal-header' style='color:{color};'>{wk}</div>",
             unsafe_allow_html=True
         )
 
@@ -113,14 +173,14 @@ while cur <= grid_end:
             filled = [v for v in day_records.values() if v]
             wake = day_records.get("기상", "")
             
-            # 요약 텍스트 만들기
+            # 요약 텍스트
             count = len(filled)
             if wake and wake != "X":
                 summary = f"기상 {wake}<br>📝 {count}개"
             elif count > 0:
-                summary = f"📝 {count}개 기록"
+                summary = f"📝 {count}개"
             else:
-                summary = "&nbsp;"  # 빈 칸
+                summary = "&nbsp;"
             
             # 스타일
             if not in_month:
@@ -136,7 +196,6 @@ while cur <= grid_end:
                 text_color = "#ddd"
                 border = "1px solid #333"
             
-            # 요일별 날짜 색깔
             weekday = d.weekday()
             if weekday == 6:
                 date_color = "#ff7777"
@@ -147,19 +206,9 @@ while cur <= grid_end:
             
             st.markdown(
                 f"""
-                <div style='
-                    background:{bg};
-                    border:{border};
-                    border-radius:6px;
-                    padding:6px;
-                    min-height:75px;
-                    font-size:12px;
-                    color:{text_color};
-                '>
-                    <div style='font-weight:bold; color:{date_color}; font-size:14px;'>
-                        {d.day}
-                    </div>
-                    <div style='margin-top:4px; line-height:1.3;'>{summary}</div>
+                <div class='cal-cell' style='background:{bg}; border:{border}; color:{text_color};'>
+                    <div class='cal-day-num' style='color:{date_color};'>{d.day}</div>
+                    <div style='margin-top:2px;'>{summary}</div>
                 </div>
                 """,
                 unsafe_allow_html=True

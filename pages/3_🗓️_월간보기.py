@@ -82,138 +82,149 @@ for (d_str, item), val in range_data.items():
 extra_items = [it for it in month_data_items if it not in routine]
 all_items = routine + extra_items
 
-# --- 1) 달력 모양 ---
+# --- 1) 달력 모양 (HTML 테이블) ---
 st.subheader("📆 달력")
 
-# 모바일/태블릿에 따라 폰트와 패딩 자동 조절하는 CSS
+weekday_kr = ["월", "화", "수", "목", "금", "토", "일"]
+
+# CSS
 st.markdown("""
 <style>
-.cal-cell {
+.cal-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 3px;
+    table-layout: fixed;
+}
+.cal-table th {
+    text-align: center;
+    font-weight: bold;
+    padding: 6px 0;
+    font-size: 13px;
+}
+.cal-table td {
+    vertical-align: top;
     border-radius: 6px;
     padding: 6px;
-    min-height: 75px;
+    height: 75px;
     font-size: 12px;
     line-height: 1.3;
+    width: 14.28%;
+    overflow: hidden;
 }
 .cal-day-num {
     font-weight: bold;
     font-size: 14px;
+    display: block;
 }
-.cal-header {
-    text-align: center;
-    font-weight: bold;
-    padding: 4px 0;
+.cal-summary {
+    margin-top: 3px;
+    font-size: 11px;
 }
-/* 모바일: 화면 폭 600px 이하 */
+/* 모바일: 600px 이하 */
 @media (max-width: 600px) {
-    .cal-cell {
-        padding: 3px;
-        min-height: 55px;
+    .cal-table {
+        border-spacing: 1px;
+    }
+    .cal-table th {
+        font-size: 10px;
+        padding: 3px 0;
+    }
+    .cal-table td {
+        padding: 2px;
+        height: 55px;
         font-size: 9px;
         line-height: 1.15;
     }
     .cal-day-num {
         font-size: 11px;
     }
-    .cal-header {
-        font-size: 11px;
-        padding: 2px 0;
-    }
-    /* Streamlit 컬럼 간격 좁히기 */
-    div[data-testid="stHorizontalBlock"] {
-        gap: 2px !important;
-    }
-    div[data-testid="column"] {
-        padding: 0 !important;
-        min-width: 0 !important;
+    .cal-summary {
+        font-size: 8px;
+        margin-top: 1px;
     }
 }
-/* 아주 좁은 화면: 폴드 접힌 상태 등 */
-@media (max-width: 400px) {
-    .cal-cell {
-        padding: 2px;
-        min-height: 50px;
+/* 아주 좁은 화면: 폴드 접힘 */
+@media (max-width: 420px) {
+    .cal-table th {
+        font-size: 9px;
+    }
+    .cal-table td {
+        height: 50px;
         font-size: 8px;
     }
     .cal-day-num {
-        font-size: 10px;
-    }
-    .cal-header {
         font-size: 10px;
     }
 }
 </style>
 """, unsafe_allow_html=True)
 
-weekday_kr = ["월", "화", "수", "목", "금", "토", "일"]
+# HTML 만들기
+html = ["<table class='cal-table'>"]
 
-# 헤더 줄
-header_cols = st.columns(7)
+# 헤더
+html.append("<thead><tr>")
 for i, wk in enumerate(weekday_kr):
-    with header_cols[i]:
-        color = "#ff4d4d" if i == 6 else ("#4d8bff" if i == 5 else "inherit")
-        st.markdown(
-            f"<div class='cal-header' style='color:{color};'>{wk}</div>",
-            unsafe_allow_html=True
-        )
+    color = "#ff4d4d" if i == 6 else ("#4d8bff" if i == 5 else "#ddd")
+    html.append(f"<th style='color:{color};'>{wk}</th>")
+html.append("</tr></thead>")
 
-# 날짜 칸 그리기
+# 본문
+html.append("<tbody>")
 cur = grid_start
 while cur <= grid_end:
-    row_cols = st.columns(7)
+    html.append("<tr>")
     for i in range(7):
         d = cur + timedelta(days=i)
-        with row_cols[i]:
-            in_month = (d.month == month)
-            is_today = (d == today)
-            
-            # 그날 데이터 모으기
-            day_records = {item: range_data.get((d.isoformat(), item), "")
-                           for item in all_items}
-            filled = [v for v in day_records.values() if v]
-            wake = day_records.get("기상", "")
-            
-            # 요약 텍스트
-            count = len(filled)
-            if wake and wake != "X":
-                summary = f"기상 {wake}<br>📝 {count}개"
-            elif count > 0:
-                summary = f"📝 {count}개"
-            else:
-                summary = "&nbsp;"
-            
-            # 스타일
-            if not in_month:
-                bg = "#1a1a1a"
-                text_color = "#555"
-                border = "1px solid #222"
-            elif is_today:
-                bg = "#2a3f5f"
-                text_color = "#fff"
-                border = "2px solid #4d8bff"
-            else:
-                bg = "#262626"
-                text_color = "#ddd"
-                border = "1px solid #333"
-            
-            weekday = d.weekday()
-            if weekday == 6:
-                date_color = "#ff7777"
-            elif weekday == 5:
-                date_color = "#77aaff"
-            else:
-                date_color = text_color
-            
-            st.markdown(
-                f"""
-                <div class='cal-cell' style='background:{bg}; border:{border}; color:{text_color};'>
-                    <div class='cal-day-num' style='color:{date_color};'>{d.day}</div>
-                    <div style='margin-top:2px;'>{summary}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        in_month = (d.month == month)
+        is_today = (d == today)
+        
+        day_records = {item: range_data.get((d.isoformat(), item), "")
+                       for item in all_items}
+        filled = [v for v in day_records.values() if v]
+        wake = day_records.get("기상", "")
+        count = len(filled)
+        
+        if wake and wake != "X":
+            summary = f"기상 {wake}<br>📝 {count}개"
+        elif count > 0:
+            summary = f"📝 {count}개"
+        else:
+            summary = "&nbsp;"
+        
+        if not in_month:
+            bg = "#1a1a1a"
+            text_color = "#555"
+            border = "1px solid #222"
+        elif is_today:
+            bg = "#2a3f5f"
+            text_color = "#fff"
+            border = "2px solid #4d8bff"
+        else:
+            bg = "#262626"
+            text_color = "#ddd"
+            border = "1px solid #333"
+        
+        weekday = d.weekday()
+        if weekday == 6:
+            date_color = "#ff7777"
+        elif weekday == 5:
+            date_color = "#77aaff"
+        else:
+            date_color = text_color
+        
+        html.append(
+            f"<td style='background:{bg}; border:{border}; color:{text_color};'>"
+            f"<span class='cal-day-num' style='color:{date_color};'>{d.day}</span>"
+            f"<div class='cal-summary'>{summary}</div>"
+            f"</td>"
+        )
+    html.append("</tr>")
     cur += timedelta(days=7)
+html.append("</tbody></table>")
+
+st.markdown("".join(html), unsafe_allow_html=True)
 
 st.write("")
 

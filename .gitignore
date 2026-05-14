@@ -1,0 +1,19 @@
+# 데이터 파일 (사적인 기록)
+*.db
+*.sqlite
+*.sqlite3
+
+# 파이썬 캐시
+__pycache__/
+*.pyc
+
+# 가상환경 (혹시 만들면)
+venv/
+.venv/
+
+# VS Code 설정
+.vscode/
+
+# OS 파일
+.DS_Store
+Thumbs.db

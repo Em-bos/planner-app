@@ -17,3 +17,6 @@ venv/
 # OS 파일
 .DS_Store
 Thumbs.db
+
+# Streamlit secrets (절대 GitHub에 올리지 말 것!)
+.streamlit/secrets.toml

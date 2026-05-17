@@ -1,5 +1,7 @@
 import streamlit as st
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
+
+KST = timezone(timedelta(hours=9))
 from db_utils import (
     init_routine_if_empty, get_routine, add_routine_item,
     remove_routine_item, move_routine_item,
@@ -32,10 +34,10 @@ def add_extra_item(name):
 
 def set_now(name):
     d = st.session_state.selected_date
-    now = datetime.now().strftime("%H:%M")
+    now = datetime.now(KST).strftime("%H:%M")
     save_record(d, name, now)
     st.session_state[f"time_{d}_{name}"] = now
-
+    
 def set_x(name):
     d = st.session_state.selected_date
     save_record(d, name, "X")
